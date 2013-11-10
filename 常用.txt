@@ -1,0 +1,112 @@
+./mdriver -f ./traces/malloc.rep 
+./mdriver -f ./traces/corners.rep
+
+./mdriver -D -f ./traces/alaska.rep	v
+./mdriver -D -f ./traces/amptjp.rep   x
+./mdriver -D -f ./traces/bash.rep	v
+./mdriver -D -f ./traces/boat.rep	v
+./mdriver -D -f ./traces/cccp.rep
+./mdriver -D -f ./traces/chrome.rep
+./mdriver -D -f ./traces/coalesce-big.rep
+./mdriver -D -f ./traces/coalescing-bal.rep
+./mdriver -D -f ./traces/corners.rep
+./mdriver -D -f ./traces/cp-decl.rep
+./mdriver -D -f ./traces/exhaust.rep
+./mdriver -D -f ./traces/firefox.rep
+./mdriver -D -f ./traces/firefox-reddit.rep x
+./mdriver -D -f ./traces/hostname.rep
+./mdriver -D -f ./traces/login.rep
+./mdriver -D -f ./traces/lrucd.rep
+./mdriver -D -f ./traces/ls.rep
+./mdriver -D -f ./traces/malloc.rep
+./mdriver -D -f ./traces/malloc-free.rep
+./mdriver -D -f ./traces/needle.rep
+./mdriver -D -f ./traces/nlydf.rep
+./mdriver -D -f ./traces/perl.rep
+./mdriver -D -f ./traces/qyqyc.rep
+./mdriver -D -f ./traces/random.rep
+./mdriver -D -f ./traces/random2.rep
+./mdriver -D -f ./traces/rm.rep
+./mdriver -D -f ./traces/rulsr.rep
+./mdriver -D -f ./traces/seglist.rep
+./mdriver -D -f ./traces/short2.rep
+   
+[xintongy@angelshark ~/malloclab-handout]$ ./mdriver -d -c ls.rep
+Using default tracefiles in ./traces/
+Measuring performance with a cycle counter.
+Processor clock rate ~= 2260.8 MHz
+...ERROR: mem_sbrk failed. Ran out of memory...
+ERROR [trace ./traces/boat.rep, line 25604]: mm_malloc failed.
+........ERROR: mem_sbrk failed. Ran out of memory...
+ERROR [trace ./traces/firefox-reddit.rep, line 29803]: mm_malloc failed.
+......ERROR: mem_sbrk failed. Ran out of memory...
+ERROR [trace ./traces/needle.rep, line 63735]: mm_malloc failed.
+.........
+Results for mm malloc:
+  valid  util   ops    secs     Kops  trace
+   yes     8%  100000  0.042618  2346 ./traces/alaska.rep
+ * yes    18%    4805  0.021835   220 ./traces/amptjp.rep
+ * yes     1%    4162  0.033970   123 ./traces/bash.rep
+ *  no      -       -         -     - ./traces/boat.rep
+ * yes    15%    5032  0.022317   225 ./traces/cccp.rep
+ * yes     1%   11991  1.112722    11 ./traces/chrome.rep
+ * yes     1%   20000  4.487854     4 ./traces/coalesce-big.rep
+   yes     0%   14400  0.001627  8852 ./traces/coalescing-bal.rep
+   yes   100%      15  0.000004  3870 ./traces/corners.rep
+ * yes    24%    5683  0.033312   171 ./traces/cp-decl.rep
+ u yes     2%      --        --    -- ./traces/exhaust.rep
+ * yes     1%    8000  0.156848    51 ./traces/firefox.rep
+    no      -       -         -     - ./traces/firefox-reddit.rep
+   yes     2%     118  0.000095  1242 ./traces/hostname.rep
+ * yes     2%   19405  0.306918    63 ./traces/login.rep
+ * yes     4%     200  0.000029  6947 ./traces/lrucd.rep
+   yes     3%     372  0.000720   516 ./traces/ls.rep
+   yes     3%      10  0.000004  2662 ./traces/malloc.rep
+   yes     6%      17  0.000002  8381 ./traces/malloc-free.rep
+ *  no      -       -         -     - ./traces/needle.rep
+ * yes    12%     200  0.000043  4623 ./traces/nlydf.rep
+   yes     2%    1494  0.016212    92 ./traces/perl.rep
+ * yes     5%     200  0.000033  6087 ./traces/qyqyc.rep
+ * yes    36%    4800  0.000852  5636 ./traces/random.rep
+ * yes    49%    4800  0.007695   624 ./traces/random2.rep
+ * yes     4%     147  0.000137  1070 ./traces/rm.rep
+ * yes     7%     200  0.000025  7892 ./traces/rulsr.rep
+ p yes     --    6495  1.080126     6 ./traces/seglist.rep
+   yes    74%      12  0.000002  5292 ./traces/short2.rep
+            -         -     -
+
+Terminated with 3 errors
+
+Results for libc malloc:
+  valid  util   ops    secs     Kops  trace
+   yes     0%  100000  0.006313 15841 ./traces/alaska.rep
+ * yes     0%    4805  0.000927  5183 ./traces/amptjp.rep
+ * yes     0%    4162  0.000120 34623 ./traces/bash.rep
+ * yes     0%   57716  0.002039 28306 ./traces/boat.rep
+ * yes     0%    5032  0.000826  6094 ./traces/cccp.rep
+ * yes     0%   11991  0.000360 33276 ./traces/chrome.rep
+ * yes     0%   20000  0.000766 26116 ./traces/coalesce-big.rep
+   yes     0%   14400  0.000716 20104 ./traces/coalescing-bal.rep
+   yes     0%      15  0.000003  4314 ./traces/corners.rep
+ * yes     0%    5683  0.001053  5397 ./traces/cp-decl.rep
+ u yes     0%      --        --    -- ./traces/exhaust.rep
+ * yes     0%    8000  0.000203 39434 ./traces/firefox.rep
+   yes     0%   99804  0.003581 27873 ./traces/firefox-reddit.rep
+   yes     0%     118  0.000005 22263 ./traces/hostname.rep
+ * yes     0%   19405  0.000623 31127 ./traces/login.rep
+ * yes     0%     200  0.000010 20504 ./traces/lrucd.rep
+   yes     0%     372  0.000011 34857 ./traces/ls.rep
+   yes     0%      10  0.000000 20277 ./traces/malloc.rep
+   yes     0%      17  0.000001 23991 ./traces/malloc-free.rep
+ u yes     0%      --        --    -- ./traces/needle.rep
+ * yes     0%     200  0.000012 16129 ./traces/nlydf.rep
+   yes     0%    1494  0.000054 27618 ./traces/perl.rep
+ * yes     0%     200  0.000007 28181 ./traces/qyqyc.rep
+ * yes     0%    4800  0.001997  2403 ./traces/random.rep
+ * yes     0%    4800  0.001894  2535 ./traces/random2.rep
+ * yes     0%     147  0.000005 28503 ./traces/rm.rep
+ * yes     0%     200  0.000008 23889 ./traces/rulsr.rep
+ p yes     --    6495  0.000292 22215 ./traces/seglist.rep
+   yes     0%      12  0.000001 19406 ./traces/short2.rep
+18 17      0%  153836  0.011143 13805
+.Segmentation fault
