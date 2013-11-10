@@ -1,4 +1,41 @@
-**************  implicit list + next fit ***********************************************************
+**************  implicit list + first fit ************************
+Results for mm malloc:
+  valid  util   ops    secs     Kops  trace
+   yes    86%  100000  0.007966 12553 ./traces/alaska.rep
+ * yes    98%    4805  0.019127   251 ./traces/amptjp.rep
+ * yes    71%    4162  0.003906  1066 ./traces/bash.rep
+ * yes    39%   57716  5.210787    11 ./traces/boat.rep
+ * yes    99%    5032  0.011339   444 ./traces/cccp.rep
+ * yes    61%   11991  0.060567   198 ./traces/chrome.rep
+ * yes    99%   20000  0.002084  9597 ./traces/coalesce-big.rep
+   yes    66%   14400  0.000355 40600 ./traces/coalescing-bal.rep
+   yes   100%      15  0.000004  3663 ./traces/corners.rep
+ * yes    99%    5683  0.054171   105 ./traces/cp-decl.rep
+ u yes    65%      --        --    -- ./traces/exhaust.rep
+ * yes    61%    8000  0.022363   358 ./traces/firefox.rep
+   yes    69%   99804 19.869880     5 ./traces/firefox-reddit.rep
+   yes    75%     118  0.000019  6235 ./traces/hostname.rep
+ * yes    82%   19405  0.390389    50 ./traces/login.rep
+ * yes    63%     200  0.000017 12016 ./traces/lrucd.rep
+   yes    77%     372  0.000083  4503 ./traces/ls.rep
+   yes    34%      10  0.000003  3951 ./traces/malloc.rep
+   yes    28%      17  0.000003  6269 ./traces/malloc-free.rep
+ u yes    99%      --        --    -- ./traces/needle.rep
+ * yes    89%     200  0.000024  8213 ./traces/nlydf.rep
+   yes    73%    1494  0.002064   724 ./traces/perl.rep
+ * yes    57%     200  0.000018 11069 ./traces/qyqyc.rep
+ * yes    92%    4800  0.015327   313 ./traces/random.rep
+ * yes    91%    4800  0.015055   319 ./traces/random2.rep
+ * yes    79%     147  0.000027  5433 ./traces/rm.rep
+ * yes    68%     200  0.000016 12177 ./traces/rulsr.rep
+ p yes     --    6495  0.050554   128 ./traces/seglist.rep
+   yes    89%      12  0.000007  1799 ./traces/short2.rep
+18 17     78%  153836  5.855771    26
+
+Perf index = 35 (util) & 0 (thru) = 35/100
+
+
+**************  implicit list + next fit ************************
 Results for mm malloc:
   valid  util   ops    secs     Kops  trace
    yes    77%  100000  0.004167 24000 ./traces/alaska.rep
