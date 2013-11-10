@@ -67,14 +67,12 @@
 #define PREV_BLKP(bp) ((char*)(bp) - GET_SIZE(((char*)(bp) - DSIZE)))
 	
 static char *heap_listp; 	/*pointer to the beginning of the heap*/
-static char *next_fit_bp;		/*pointer to start find_fit*/
 
 static void *find_fit(size_t asize);
 static void place(void *bp, size_t asize); 
 static void *coalesce(void *bp);
 static void *extend_heap(size_t words);
-static int in_heap(const void *p);
-static int aligned(const void *p);
+
 
 /*
  * Initialize: return -1 on error, 0 on success.
@@ -90,7 +88,6 @@ int mm_init(void) {
 	PUT(heap_listp + (2*WSIZE), PACK(DSIZE,1));
 	PUT(heap_listp + (3*WSIZE), PACK(0,1));
 	heap_listp += (2*WSIZE);
-	next_fit_bp = heap_listp;
 	
 	/*Extend the empty heap with a free block of CHUNKSIZE bytes */
 	if (extend_heap(CHUNKSIZE/WSIZE) == NULL){
@@ -186,23 +183,14 @@ void *calloc (size_t nmemb, size_t size) {
  * find_fit
  */
 static void *find_fit(size_t asize){
-	/* Next fit search */
+	/* First fit search */
 	void *bp;
 	
-	for (bp = next_fit_bp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp)) {
-		if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp))) ) {
-			next_fit_bp = bp;
-			return bp;
+	for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp)) {
+		if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
+		return bp;
 		}
 	}
-	
-	for (bp = heap_listp; ( bp != next_fit_bp && GET_SIZE(HDRP(bp)) > 0 ); bp = NEXT_BLKP(bp)) {
-		if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp))) ) {
-			next_fit_bp = bp;
-			return bp;
-		}
-	}
-	
 	return NULL; /* No fit */
 }
 
@@ -271,14 +259,7 @@ static void *coalesce(void *bp){
 	size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
 	size_t size = GET_SIZE(HDRP(bp));
 	
-	if( (NEXT_BLKP(bp) == next_fit_bp) && (!next_alloc)){
-		next_fit_bp = bp;
-	}
-	if((bp == next_fit_bp) && (!prev_alloc)){
-		next_fit_bp = PREV_BLKP(bp);
-	}
-	
-	if (prev_alloc && next_alloc){ 	/*prev and next block are allocated*/
+	if(prev_alloc && next_alloc){ 	/*prev and next block are allocated*/
 		return bp;
 	}
 	
@@ -339,21 +320,18 @@ void mm_checkheap(int verbose) {
 		fprintf(stderr, "size=%lu, alloc=%lu\n",GET_SIZE(bp),GET_ALLOC(bp));
 	}
 	
-	if(GET_SIZE(HDRP(next_fit_bp)) != GET_SIZE(FTRP(next_fit_bp)))
-		fprintf(stderr, "checkheap: next_fit_bp: 'size' doesn't match.\n");
-	
 	for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp)) {
 		if(in_heap(bp) != 1)
 			fprintf(stderr, "checkheap: pointer is not in the heap\n");
 		if(aligned(bp) != 1)
 			fprintf(stderr, "checkheap: pointer is not aligned.\n");
 		if(GET_SIZE(HDRP(bp)) != GET_SIZE(FTRP(bp))){
-			fprintf(stderr, "checkheap: 'size' of h&f doesn't match, bp=%p\n",bp);
-			fprintf(stderr, "header_s=%lu, footer_s=%lu, ",GET_SIZE(HDRP(bp)),GET_SIZE(FTRP(bp)));
+			fprintf(stderr, "checkheap: 'size' of header and footer doesn't match, ");
+			fprintf(stderr, "header=%lu, footer=%lu, ",GET_SIZE(HDRP(bp)),GET_SIZE(FTRP(bp)));
 			fprintf(stderr, "header_a=%lu, footer_a=%lu\n",GET_ALLOC(HDRP(bp)),GET_ALLOC(FTRP(bp)));
 		}
 		if(GET_ALLOC(HDRP(bp)) != GET_ALLOC(FTRP(bp)))
-			fprintf(stderr, "checkheap: 'alloc' of h&f doesn't match.\n");
+			fprintf(stderr, "checkheap: 'alloc' of header and footer doesn't match.\n");
 		if(GET_ALLOC(HDRP(bp)) == 0 && ( GET_ALLOC(HDRP(PREV_BLKP(bp))) == 0 || GET_ALLOC(HDRP(NEXT_BLKP(bp))) == 0 ) )
 			fprintf(stderr, "checkheap: two consecutive free blocks in the heap.\n");
 	}
