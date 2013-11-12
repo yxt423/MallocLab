@@ -55,7 +55,7 @@
 #define PUT(p, val)	(*(unsigned long int *)(p) = (unsigned long int)(val))
 
 /*Read a word at address P and convert to a void pointer*/
-#define GET_VP(p)	(void*)GET(p)
+#define GET_VP(p)		(void *)GET(p)
 
 /*Read the size, allocated fields or list boundary mark from address P */
 #define GET_SIZE(p)		(GET(p) & ~0x7)
@@ -100,13 +100,15 @@ int mm_init(void) {
 	PUT(heap_listp + (3*WSIZE), PACK(0,1));
 	heap_listp += (2*WSIZE);
 	free_listp = heap_listp;
+	//
+	//fprintf(stderr, "mm_init: heap start from: %p\n",heap_listp);
 	
 	/*Extend the empty heap with a free block of CHUNKSIZE bytes */
 	if (extend_heap(CHUNKSIZE/WSIZE) == NULL){
 		fprintf(stderr, "extend_heap in mm_init error\n");
 		return -1;
 	}
-	
+		
     return 0;
 }
 
@@ -199,9 +201,16 @@ static void *find_fit(size_t asize){
 	/* First fit search */
 	void *bp;
 	
-	for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp)) {
+	if(free_listp == heap_listp){
+		//
+		//fprintf(stderr, "free_listp == heap_listp!\n");
+		return NULL;
+	}
+	
+	for (bp = free_listp; (((int)bp != 1) && GET_SIZE(HDRP(bp)) > 0); bp = NEXT_F_BLKP(bp)) {
 		if (!GET_ALLOC(HDRP(bp)) && (asize <= GET_SIZE(HDRP(bp)))) {
-		return bp;
+			//fprintf(stderr, "find_fit!\n");
+			return bp;
 		}
 	}
 	return NULL; /* No fit */
@@ -219,6 +228,9 @@ static void place(void *bp, size_t asize){
 		
 		PUT(NEXT_BLKP(bp), PREV_F_BLKP(bp));
 		PUT(NEXT_BLKP(bp) + WSIZE, NEXT_F_BLKP(bp));
+		
+		//
+		//fprintf(stderr, "place: %d to %d\n",(int)(HDRP(bp)-heap_listp),(int)(FTRP(bp)-heap_listp));
 		
 		bp = NEXT_BLKP(bp);
 		PUT(HDRP(bp), PACK(csize - asize, 0));
@@ -238,6 +250,7 @@ static void place(void *bp, size_t asize){
 		delete_free_block(bp);
 	}
 }
+
 /*
  * Extend the heap with a new free block
  */
@@ -256,11 +269,9 @@ static void *extend_heap(size_t words){
 	PUT(FTRP(bp), PACK(size, 0)); /* Free block footer */
 	PUT(HDRP(NEXT_BLKP(bp)), PACK(0, 1)); /* New epilogue header */
 	
-	/*if no free block, Initialize the the free list*/
-	if (free_listp == heap_listp){
-		insert_free_block(bp);
-	}
-		
+	//
+	//fprintf(stderr, "extend_heap: heap extendted to %d\n",(int)(HDRP(NEXT_BLKP(bp))-heap_listp));
+	
 	/* Coalesce if the previous block was free */
 	return coalesce(bp);
 }
@@ -268,17 +279,22 @@ static void *extend_heap(size_t words){
 /*
  * free
  */
-void free (void *ptr) {
-    if(!ptr) return;
-	if(ptr == heap_listp) return;
-	if(ptr == (mem_heap_hi() + 1 - WSIZE)) return;
+void free (void *bp) {
+    if(!bp) return;
+	if(bp == heap_listp) return;
+	if(bp == (mem_heap_hi() + 1 - WSIZE)) return;
 	
-	size_t size = GET_SIZE(HDRP(ptr));
+	size_t size = GET_SIZE(HDRP(bp));
 	
-	PUT(HDRP(ptr), PACK(size, 0));
-	PUT(FTRP(ptr), PACK(size, 0));
-	coalesce(ptr);
+	PUT(HDRP(bp), PACK(size, 0));
+	PUT(FTRP(bp), PACK(size, 0));
+	
+	//
+	//fprintf(stderr, "free: %d to %d\n",(int)(HDRP(bp)-heap_listp),(int)(FTRP(bp)-heap_listp));
+		
+	coalesce(bp);
 }
+
 /*
  * coalesce
  */
@@ -290,6 +306,10 @@ static void *coalesce(void *bp){
 	size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
 	size_t size = GET_SIZE(HDRP(bp));
 	
+	/*Check free list root*/
+	if((GET(free_listp) != 1) && (free_listp != heap_listp))
+		fprintf(stderr, "coalesce0: free_listp error.\n");
+		
 	if(prev_alloc && next_alloc){ 	/*prev and next block are allocated*/
 		insert_free_block(bp);
 		return bp;
@@ -321,6 +341,7 @@ static void *coalesce(void *bp){
 		bp = PREV_BLKP(bp);
 		insert_free_block(bp);
 	}
+		
 	return bp;
 }
 
@@ -337,7 +358,7 @@ static void delete_free_block(void *bp){
 		
 	/*no predecessor, has succeeder, uppdate free_listp */
 	else if (GET_BOUNDARY(bp + WSIZE) != 1)	
-		free_listp = (char *)NEXT_F_BLKP(bp);
+		free_listp = NEXT_F_BLKP(bp);
 		
 	/*no predecessor or succeeder (the only free block was taken)*/
 	else
@@ -353,6 +374,7 @@ static void delete_free_block(void *bp){
  * Insert one free block to the root point of the free list
  */
 static void insert_free_block(void *bp){
+	
 	if(free_listp != heap_listp){	/*free list exist*/
 		PUT(bp,PACK(0,1));			/*update bp's pred and succ pointer*/
 		PUT(bp + WSIZE, free_listp);
@@ -360,10 +382,11 @@ static void insert_free_block(void *bp){
 		free_listp = bp;			/*update free list root*/
 	}
 	else{							/*free list uninitialized*/
-		free_listp = bp;
 		PUT(bp, PACK(0,1));
 		PUT(bp + WSIZE, PACK(0,1));
+		free_listp = bp;
 	}
+	
 }
 
 
@@ -408,8 +431,12 @@ void mm_checkheap(int verbose) {
 	}
 	
 	/*Check free list root*/
-	if((GET(free_listp) != 1) && (free_listp != heap_listp))
-		fprintf(stderr, "checkheap: free_listp error,");
+	if((GET(free_listp) != 1) && (free_listp != heap_listp)){
+		fprintf(stderr, "checkheap: free_listp error. \n");
+		fprintf(stderr, "free_listp=%p, heap_listp=%p, \n",free_listp,heap_listp);
+		fprintf(stderr, "header=%lu, footer=%lu, ",GET(HDRP(bp)),GET(FTRP(bp)));
+		fprintf(stderr, "pred=%p, succ=%p, \n",PREV_F_BLKP(free_listp),NEXT_F_BLKP(free_listp));
+	}
 	
 	/*Check each block*/
 	for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp)) {
@@ -439,19 +466,23 @@ void mm_checkheap(int verbose) {
 				fprintf(stderr, "checkheap: two consecutive free blocks in the heap.\n");
 			
 			/*All free list pointers point in the heap*/
-			if((in_heap((void*)GET(bp)) != 1) || in_heap((void*)GET(bp + WSIZE)) != 1)
+			if( ((in_heap(GET_VP(bp)) != 1) && (GET_BOUNDARY(bp) !=1))  ||
+				((in_heap(GET_VP(bp + WSIZE)) != 1) && (GET_BOUNDARY(bp + WSIZE) !=1))   ){
 				fprintf(stderr, "checkheap: free list pointer doesn't point in the heap.\n");
+				fprintf(stderr, "mem_heap_hi()=%p, mem_heap_lo()=%p, \n",mem_heap_hi(),mem_heap_lo());
+				fprintf(stderr, "GET_VP(bp)=%p, GET_VP(bp + WSIZE)=%p, \n",GET_VP(bp),GET_VP(bp + WSIZE));
+			}
 			
 			/* next/previous pointers are consistent */
 			if(GET_BOUNDARY(bp) !=1){
-				if( NEXT_F_BLKP(PREV_F_BLKP(bp)) != bp )
+				if(NEXT_F_BLKP(PREV_F_BLKP(bp)) != bp )
 					fprintf(stderr, "checkheap: pred: pred and succ doesn't match.\n");
 			}
 			else
 				first_free_block_counter++;
 			
 			if(GET_BOUNDARY(bp + WSIZE) !=1){
-				if( PREV_F_BLKP(NEXT_F_BLKP(bp)) != bp )
+				if(PREV_F_BLKP(NEXT_F_BLKP(bp)) != bp )
 					fprintf(stderr, "checkheap: succ: pred and succ doesn't match.\n");
 			}
 			else
@@ -464,7 +495,7 @@ void mm_checkheap(int verbose) {
 			
 	/*Count free blocks by traversing free list */
 	free_block_counter_2 = 1;
-	for(bp = free_listp; GET_BOUNDARY(bp + WSIZE) !=1; bp = NEXT_F_BLKP(bp)){
+	for(bp = free_listp; GET_BOUNDARY(bp + WSIZE) != 1; bp = NEXT_F_BLKP(bp)){
 		free_block_counter_2++;
 	}
 	
@@ -478,10 +509,3 @@ void mm_checkheap(int verbose) {
 	if(last_free_block_counter != 1)
 		fprintf(stderr, "checkheap: last_free_block_counter=%d\n",last_free_block_counter);
 }
-
-
-
-
-
-
-

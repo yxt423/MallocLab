@@ -66,7 +66,7 @@ void *mem_sbrk(int incr) {
 		if (incr < 0)
 			fprintf(stderr, "incr < 0\n");
 		if ((mem_brk + incr) > mem_max_addr)
-			fprintf(stderr, "(mem_brk + incr) > mem_max_addr\n");
+			fprintf(stderr, "(mem_brk + incr) > mem_max_addr, (mem_brk + incr)=%p, mem_max_addr=%p\n",(mem_brk + incr),mem_max_addr);
 			
 		return (void *)-1;
 	}

@@ -1,15 +1,15 @@
 ./mdriver -f ./traces/malloc.rep 
 ./mdriver -f ./traces/corners.rep
 
-./mdriver -D -f ./traces/alaska.rep	v
-./mdriver -D -f ./traces/amptjp.rep   x
-./mdriver -D -f ./traces/bash.rep	v
-./mdriver -D -f ./traces/boat.rep	v
+./mdriver -D -f ./traces/alaska.rep	
+./mdriver -D -f ./traces/amptjp.rep   
+./mdriver -D -f ./traces/bash.rep	
+./mdriver -D -f ./traces/boat.rep	
 ./mdriver -D -f ./traces/cccp.rep
 ./mdriver -D -f ./traces/chrome.rep
 ./mdriver -D -f ./traces/coalesce-big.rep
 ./mdriver -D -f ./traces/coalescing-bal.rep
-./mdriver -D -f ./traces/corners.rep
+./mdriver -D -f ./traces/corners.rep   s
 ./mdriver -D -f ./traces/cp-decl.rep
 ./mdriver -D -f ./traces/exhaust.rep
 ./mdriver -D -f ./traces/firefox.rep
@@ -18,8 +18,8 @@
 ./mdriver -D -f ./traces/login.rep
 ./mdriver -D -f ./traces/lrucd.rep
 ./mdriver -D -f ./traces/ls.rep
-./mdriver -D -f ./traces/malloc.rep
-./mdriver -D -f ./traces/malloc-free.rep
+./mdriver -D -f ./traces/malloc.rep   s
+./mdriver -D -f ./traces/malloc-free.rep   s
 ./mdriver -D -f ./traces/needle.rep
 ./mdriver -D -f ./traces/nlydf.rep
 ./mdriver -D -f ./traces/perl.rep
@@ -29,53 +29,43 @@
 ./mdriver -D -f ./traces/rm.rep
 ./mdriver -D -f ./traces/rulsr.rep
 ./mdriver -D -f ./traces/seglist.rep
-./mdriver -D -f ./traces/short2.rep
+./mdriver -D -f ./traces/short2.rep   s
    
-[xintongy@angelshark ~/malloclab-handout]$ ./mdriver -d -c ls.rep
-Using default tracefiles in ./traces/
-Measuring performance with a cycle counter.
-Processor clock rate ~= 2260.8 MHz
-...ERROR: mem_sbrk failed. Ran out of memory...
-ERROR [trace ./traces/boat.rep, line 25604]: mm_malloc failed.
-........ERROR: mem_sbrk failed. Ran out of memory...
-ERROR [trace ./traces/firefox-reddit.rep, line 29803]: mm_malloc failed.
-......ERROR: mem_sbrk failed. Ran out of memory...
-ERROR [trace ./traces/needle.rep, line 63735]: mm_malloc failed.
-.........
 Results for mm malloc:
   valid  util   ops    secs     Kops  trace
-   yes     8%  100000  0.042618  2346 ./traces/alaska.rep
- * yes    18%    4805  0.021835   220 ./traces/amptjp.rep
- * yes     1%    4162  0.033970   123 ./traces/bash.rep
+   yes    15%  100000  0.004480 22320 ./traces/alaska.rep
+ * yes    92%    4805  0.001431  3358 ./traces/amptjp.rep
+ * yes     3%    4162  0.000835  4982 ./traces/bash.rep
  *  no      -       -         -     - ./traces/boat.rep
- * yes    15%    5032  0.022317   225 ./traces/cccp.rep
- * yes     1%   11991  1.112722    11 ./traces/chrome.rep
- * yes     1%   20000  4.487854     4 ./traces/coalesce-big.rep
-   yes     0%   14400  0.001627  8852 ./traces/coalescing-bal.rep
-   yes   100%      15  0.000004  3870 ./traces/corners.rep
- * yes    24%    5683  0.033312   171 ./traces/cp-decl.rep
- u yes     2%      --        --    -- ./traces/exhaust.rep
- * yes     1%    8000  0.156848    51 ./traces/firefox.rep
-    no      -       -         -     - ./traces/firefox-reddit.rep
-   yes     2%     118  0.000095  1242 ./traces/hostname.rep
- * yes     2%   19405  0.306918    63 ./traces/login.rep
- * yes     4%     200  0.000029  6947 ./traces/lrucd.rep
-   yes     3%     372  0.000720   516 ./traces/ls.rep
-   yes     3%      10  0.000004  2662 ./traces/malloc.rep
-   yes     6%      17  0.000002  8381 ./traces/malloc-free.rep
+ * yes    94%    5032  0.000690  7298 ./traces/cccp.rep
+ * yes     8%   11991  0.000812 14774 ./traces/chrome.rep
+ * yes     1%   20000  0.012106  1652 ./traces/coalesce-big.rep
+   yes     0%   14400  0.008091  1780 ./traces/coalescing-bal.rep
+   yes   100%      15  0.000013  1156 ./traces/corners.rep
+ * yes    96%    5683  0.002080  2732 ./traces/cp-decl.rep
+ *  no      -       -         -     - ./traces/exhaust.rep
+ * yes     5%    8000  0.000639 12520 ./traces/firefox.rep
+   yes    69%   99804  0.005806 17190 ./traces/firefox-reddit.rep
+   yes     2%     118  0.000080  1474 ./traces/hostname.rep
+ * yes    82%   19405  0.000885 21932 ./traces/login.rep
+ * yes     8%     200  0.000025  8075 ./traces/lrucd.rep
+   yes     8%     372  0.000085  4362 ./traces/ls.rep
+   yes     3%      10  0.000012   823 ./traces/malloc.rep
+   yes     4%      17  0.000010  1713 ./traces/malloc-free.rep
  *  no      -       -         -     - ./traces/needle.rep
- * yes    12%     200  0.000043  4623 ./traces/nlydf.rep
-   yes     2%    1494  0.016212    92 ./traces/perl.rep
- * yes     5%     200  0.000033  6087 ./traces/qyqyc.rep
- * yes    36%    4800  0.000852  5636 ./traces/random.rep
- * yes    49%    4800  0.007695   624 ./traces/random2.rep
- * yes     4%     147  0.000137  1070 ./traces/rm.rep
- * yes     7%     200  0.000025  7892 ./traces/rulsr.rep
- p yes     --    6495  1.080126     6 ./traces/seglist.rep
-   yes    74%      12  0.000002  5292 ./traces/short2.rep
+ * yes    23%     200  0.000033  6084 ./traces/nlydf.rep
+   yes    15%    1494  0.000152  9822 ./traces/perl.rep
+ * yes    10%     200  0.000028  7045 ./traces/qyqyc.rep
+ * yes    87%    4800  0.001662  2887 ./traces/random.rep
+ * yes    85%    4800  0.001981  2423 ./traces/random2.rep
+ * yes     5%     147  0.000079  1851 ./traces/rm.rep
+ * yes    17%     200  0.000020  9850 ./traces/rulsr.rep
+ p yes     --    6495  0.004503  1442 ./traces/seglist.rep
+   yes    64%      12  0.000009  1390 ./traces/short2.rep
             -         -     -
 
 Terminated with 3 errors
+
 
 Results for libc malloc:
   valid  util   ops    secs     Kops  trace
