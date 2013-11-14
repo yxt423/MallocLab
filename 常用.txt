@@ -30,42 +30,6 @@
 ./mdriver -D -f ./traces/rulsr.rep
 ./mdriver -D -f ./traces/seglist.rep
 ./mdriver -D -f ./traces/short2.rep   s
-   
-Results for mm malloc:
-  valid  util   ops    secs     Kops  trace
-   yes    15%  100000  0.004480 22320 ./traces/alaska.rep
- * yes    92%    4805  0.001431  3358 ./traces/amptjp.rep
- * yes     3%    4162  0.000835  4982 ./traces/bash.rep
- *  no      -       -         -     - ./traces/boat.rep
- * yes    94%    5032  0.000690  7298 ./traces/cccp.rep
- * yes     8%   11991  0.000812 14774 ./traces/chrome.rep
- * yes     1%   20000  0.012106  1652 ./traces/coalesce-big.rep
-   yes     0%   14400  0.008091  1780 ./traces/coalescing-bal.rep
-   yes   100%      15  0.000013  1156 ./traces/corners.rep
- * yes    96%    5683  0.002080  2732 ./traces/cp-decl.rep
- *  no      -       -         -     - ./traces/exhaust.rep
- * yes     5%    8000  0.000639 12520 ./traces/firefox.rep
-   yes    69%   99804  0.005806 17190 ./traces/firefox-reddit.rep
-   yes     2%     118  0.000080  1474 ./traces/hostname.rep
- * yes    82%   19405  0.000885 21932 ./traces/login.rep
- * yes     8%     200  0.000025  8075 ./traces/lrucd.rep
-   yes     8%     372  0.000085  4362 ./traces/ls.rep
-   yes     3%      10  0.000012   823 ./traces/malloc.rep
-   yes     4%      17  0.000010  1713 ./traces/malloc-free.rep
- *  no      -       -         -     - ./traces/needle.rep
- * yes    23%     200  0.000033  6084 ./traces/nlydf.rep
-   yes    15%    1494  0.000152  9822 ./traces/perl.rep
- * yes    10%     200  0.000028  7045 ./traces/qyqyc.rep
- * yes    87%    4800  0.001662  2887 ./traces/random.rep
- * yes    85%    4800  0.001981  2423 ./traces/random2.rep
- * yes     5%     147  0.000079  1851 ./traces/rm.rep
- * yes    17%     200  0.000020  9850 ./traces/rulsr.rep
- p yes     --    6495  0.004503  1442 ./traces/seglist.rep
-   yes    64%      12  0.000009  1390 ./traces/short2.rep
-            -         -     -
-
-Terminated with 3 errors
-
 
 Results for libc malloc:
   valid  util   ops    secs     Kops  trace

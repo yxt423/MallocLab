@@ -868,6 +868,7 @@ static int eval_mm_valid(trace_t *trace, range_t **ranges)
     for (i = 0;  i < trace->num_ops;  i++) {
         index = trace->ops[i].index;
         size = trace->ops[i].size;
+		//fprintf(stdout, "\n" );
 		//fprintf(stdout, "mdriver: %u %d %d\n", (trace->ops[i].type),(int)index,(int)size);
         if(debug_mode == DBG_EXPENSIVE) {
             range_t *r;
