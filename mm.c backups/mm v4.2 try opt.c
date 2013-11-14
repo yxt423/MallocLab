@@ -38,8 +38,8 @@
 /* basic constants and macros */
 #define WSIZE			8		/*word and header/footer size (bytes)*/
 #define DSIZE			16		/*Double word size (bytes)*/
-#define CHUNKSIZE		(1<<12)	/*Extend heap by the amount(bytes)*/
-#define FREE_LIST_NO	10		/* number of free lists */
+#define CHUNKSIZE		(1<<8)	/*Extend heap by the amount(bytes)*/
+#define FREE_LIST_NO	16		/* number of free lists */
 #define MAX_NUMBER		(unsigned long int)-1
 #define MAX(x,y)		((x)>(y)? (x):(y))
 
@@ -86,6 +86,7 @@ static void delete_free_block(void *bp);
 static void insert_free_block(void *bp);
 static void *find_free_list(void *bp);
 static int find_free_list_no(size_t size);
+static void place2(void *bp, size_t asize);
 
 /*
  * Initialize: return -1 on error, 0 on success.
@@ -119,6 +120,8 @@ int mm_init(void) {
 		fprintf(stderr, "extend_heap in mm_init error\n");
 		return -1;
 	}
+	bp = coalesce(bp);	
+	insert_free_block(bp);
     return 0;
 }
 
@@ -150,7 +153,8 @@ void *malloc (size_t size) {
 	extendsize = MAX(asize,CHUNKSIZE);
 	if ((bp = extend_heap(extendsize/WSIZE)) == NULL)
 		return NULL;
-	place(bp, asize);
+	bp = coalesce(bp);
+	place2(bp, asize);
 	return bp;
 }
 
@@ -259,6 +263,27 @@ static void place(void *bp, size_t asize){
 	}
 }
 
+static void place2(void *bp, size_t asize){  
+	size_t csize = GET_SIZE(HDRP(bp));
+	
+	if ((csize - asize) >= (2*DSIZE)) {  
+		PUT(HDRP(bp), PACK(asize, 1));
+		PUT(FTRP(bp), PACK(asize, 1));
+		
+		dbg_printf("place: %d to %d\n",(int)(HDRP(bp)-heap_listp),(int)(FTRP(bp)-heap_listp+WSIZE));
+		
+		bp = NEXT_BLKP(bp);
+		PUT(HDRP(bp), PACK(csize - asize, 0));
+		PUT(FTRP(bp), PACK(csize - asize, 0));
+		
+		insert_free_block(bp);
+	}
+	else{
+		PUT(HDRP(bp), PACK(csize, 1));
+		PUT(FTRP(bp), PACK(csize, 1));
+	}
+}
+
 /*
  * Extend the heap with a new free block
  */
@@ -280,7 +305,7 @@ static void *extend_heap(size_t words){
 	dbg_printf( "extend_heap: heap extendted to %d\n",(int)(HDRP(NEXT_BLKP(bp))-heap_listp));
 	
 	/* Coalesce if the previous block was free */
-	return coalesce(bp);
+	return bp;
 }
 
 /*
@@ -288,6 +313,8 @@ static void *extend_heap(size_t words){
  */
 void free (void *bp) {
     if(!bp) return;
+	if(bp == heap_listp) return;
+	if(bp == (mem_heap_hi() + 1 - WSIZE)) return;
 	
 	size_t size = GET_SIZE(HDRP(bp));
 	
@@ -296,7 +323,8 @@ void free (void *bp) {
 	
 	dbg_printf("free: %d to %d\n",(int)(HDRP(bp)-heap_listp),(int)(FTRP(bp)-heap_listp));
 		
-	coalesce(bp);
+	bp = coalesce(bp);
+	insert_free_block(bp);	
 }
 
 /*
@@ -339,7 +367,7 @@ static void *coalesce(void *bp){
 		bp = PREV_BLKP(bp);
 		//insert_free_block(bp);
 	}
-	insert_free_block(bp);	
+	//insert_free_block(bp);	
 	return bp;
 }
 
@@ -427,36 +455,68 @@ static void *find_free_list(void *bp){
  * -1408; 	-1920;		-2432;		-infinity
  */
 static int find_free_list_no(size_t size){
-	int block = size / DSIZE;
-
-    if (block <= 4) {
-        return 0;
-    }
-    if (block <= 8) {
-        return 1;
-    }
-    if (block <= 16) {
-        return 2;
-    }
-    if (block <= 32) {
-        return 3;
-    }
-    if (block <= 64) {
-        return 4;
-    }
-    if (block <= 128) {
-        return 5;
-    }
-    if (block <= 256) {
-        return 6;
-    }
-    if (block <= 512) {
-        return 7;
-    }
-    if (block <= 1024) {
-        return 8;
-    }
-    return 9;
+	int free_list_no;
+	if(size <= 384){
+		if(size <= 128){
+			if(size <= 64){
+				if(size <= 32)
+					free_list_no = 0;
+				else
+					free_list_no = 1;
+			}
+			else{
+				if(size <= 96)
+					free_list_no = 2;
+				else
+					free_list_no = 3;
+			}
+		}
+		else{
+			if(size <= 256){
+				if(size <= 192)
+					free_list_no = 4;
+				else
+					free_list_no = 5;
+			}
+			else{
+				if(size <= 320)
+					free_list_no = 6;
+				else
+					free_list_no = 7;
+			}
+		}
+	}
+	else{
+		if(size <= 1152){
+			if(size <= 640){
+				if(size <= 512)
+					free_list_no = 8;
+				else
+					free_list_no = 9;
+			}
+			else{
+				if(size <= 896)
+					free_list_no = 10;
+				else
+					free_list_no = 11;
+			}
+		}
+		else{
+			if(size <= 1920){
+				if(size <= 1408)
+					free_list_no = 12;
+				else
+					free_list_no = 13;
+			}
+			else{
+				if(size <= 2432)
+					free_list_no = 14;
+				else
+					free_list_no = 15;
+			}
+		}
+	}
+	return free_list_no;
 }
  
 /*
