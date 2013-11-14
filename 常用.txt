@@ -1,7 +1,7 @@
 ./mdriver -f ./traces/malloc.rep 
 ./mdriver -f ./traces/corners.rep
 
-./mdriver -D -f ./traces/alaska.rep	
+./mdriver -D -f ./traces/alaska.rep
 ./mdriver -D -f ./traces/amptjp.rep   
 ./mdriver -D -f ./traces/bash.rep	
 ./mdriver -D -f ./traces/boat.rep	

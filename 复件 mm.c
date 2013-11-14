@@ -56,7 +56,7 @@
 #define PUT(p, val)	(*(unsigned long int *)(p) = (unsigned long int)(val))
 
 /*Read a word at address P and convert to a void pointer*/
-#define GET_VP(p)		(void *)GET(p)
+#define GET_ADDR(p)		(void *)GET(p)
 
 /*Read the size, allocated fields or list boundary mark from address P */
 #define GET_SIZE(p)		(GET(p) & ~0x7)
