@@ -3,7 +3,7 @@
 
 ./mdriver -D -f ./traces/alaska.rep
 ./mdriver -D -f ./traces/amptjp.rep   
-./mdriver -D -f ./traces/bash.rep	
+./mdriver -D -f ./traces/bash.rep	 x
 ./mdriver -D -f ./traces/boat.rep	
 ./mdriver -D -f ./traces/cccp.rep
 ./mdriver -D -f ./traces/chrome.rep
