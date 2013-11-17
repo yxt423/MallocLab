@@ -3,8 +3,43 @@
  *
  * Name: Xintong Yu  Andrew ID: xintongy
  *  
- * NOTE TO STUDENTS: Replace this header comment with your own header
- * comment that gives a high level description of your solution.
+ * A simple general purpose dynamic storage allocator
+ * 
+ ***** Important Data Structures
+ * 
+ * 1.Data structures to organize free blocks: Segregated free lists
+ * 2.Algorithms to scan free blocks: First ﬁt
+ *
+ * 3.Structure of the whole heap:
+ * | free list root pointers | prologue | heap blocks | epilogue |
+ * 4.Structure of allocated blocks:
+ * | header | content | footer |
+ * 5.Structure of free blocks:
+ * | header | prev_freep | next_freep | --- | footer |
+ * 6.Structure of free list root pointers:
+ * | 0x1 | next_freep |
+ *
+ * 7.Content of header and footer: ( size | 1 bit alloc )
+ * 8.Content of prologue: / DSIZE | 0x1 / DSIZE | 0x1 /
+ * 9.Content of epilogue: / 0 | 0x1 / 
+ * The allocated prologue and epilogue blocks are overhead that
+ * eliminate edge conditions during coalescing.
+ * 
+ * 10.Max heap size: 2^32 
+ *
+ ****** Important Functions of Allocator
+ *
+ * int mm_init(void);
+ * void *malloc(size_t size);
+ * void free(void *ptr);
+ * void *realloc(void *ptr, size_t size);
+ * void *calloc (size_t nmemb, size_t size);
+ * void mm_checkheap(int); 
+ *
+ *
+ *
+ *
+ *
  */
 #include "mm.h"
 #include "memlib.h"
@@ -16,7 +51,7 @@
 
 /* If you want debugging output, use the following macro.  When you hand
  * in, remove the #define DEBUG line. */
-//#define DEBUG
+/* #define DEBUG */
 #ifdef DEBUG
 # define dbg_printf(...) printf(__VA_ARGS__)
 # define dbg_printblock(a) printblock(a)
@@ -42,6 +77,9 @@
 #define FREE_LIST_NUM	10		/* number of free lists */
 #define MAX_NUMBER		(unsigned int)-1
 #define MAX(x,y)		((x)>(y)? (x):(y))
+
+/* used as pointer in free list to mark the begining/end*/
+#define FLMARK			(void*)1 
 
 /* single word or double word alignment */
 #define ALIGNMENT		DSIZE
@@ -85,6 +123,7 @@ inline void *find_fit(size_t asize);
 inline void place(void *bp, size_t asize); 
 inline void *coalesce(void *bp);
 inline void *extend_heap(size_t words);
+
 inline void *offset2addr(int offset);
 inline void *next_free_block(void *bp);
 inline void *prev_free_block(void *bp);
@@ -101,6 +140,7 @@ void mm_checkheap(int verbose);
 inline int check_freelist(int list_no);
 inline void check_freeblock(void* bp);
 inline void check_block(void* bp);
+inline void check_heapboundaries(void *heapstart, void *heapend);
 inline void printblock(void *bp);
 
 /*
@@ -113,6 +153,10 @@ int mm_init(void) {
 		fprintf(stderr, "mm_init error\n");
 		return -1;
 	}
+	
+	/* Save base address of heap*/
+	base_addr = heap_listp;
+	dbg_printf("base_addr: %p\n",base_addr);
 	
 	/*use the first FREE_LIST_NUM blocks as free list roots*/ 
 	free_listp = heap_listp;
@@ -510,7 +554,7 @@ inline void *get_list_first(int i){
  */
 inline void *offset2addr(int offset){
     if (offset != 1) 
-        return (void *)((long int)offset | 0x800000000);
+        return (void *)((long int)offset | (long int)base_addr);
     else 
         return (void *)1;
 }
@@ -558,7 +602,7 @@ inline int aligned(const void *p) {
 }
 
 /*
- * mm_checkheap
+ * mm_checkheap -  scans the heap and checks it for correctness
  */
 void mm_checkheap(int verbose) {
 	void *bp;
@@ -596,6 +640,10 @@ void mm_checkheap(int verbose) {
 		}
 	}
 	
+	/*Check heap boundaries*/
+	check_heapboundaries(free_listp, bp-1);
+	
+	/*Count free blocks by traversing free list */
 	free_block_counter_2 = 0;
 	for(int i=0; i<FREE_LIST_NUM; i++){
 		free_block_counter_2 += check_freelist(i);
@@ -608,12 +656,15 @@ void mm_checkheap(int verbose) {
 }
 
 /*
- * check_block - check content of each block
+ * check_block - check each block's address alignment, header and footer,
+ * and if it is in the heap.
  */
 inline void check_block(void* bp){
-	if(in_heap(bp) != 1)	/*Check point in the heap */
+	/*Check point in the heap */
+	if(in_heap(bp) != 1)	
 		fprintf(stderr, "checkheap: pointer is not in the heap\n");
-	if(aligned(bp) != 1)	/*Check block's address alignmen */
+	/*Check block's address alignmen */
+	if(aligned(bp) != 1)	
 		fprintf(stderr, "checkheap: pointer is not aligned.\n");
 		
 	/*Check each block's header and footer*/
@@ -628,7 +679,8 @@ inline void check_block(void* bp){
 }
 
 /*
- * check_freeblock - check content of each free block
+ * check_freeblock - check content of each free block:
+ * coalescing, pointers point in the heap, pointers consistency
  */
 inline void check_freeblock(void* bp){
 	/*Check coalescing*/
@@ -645,7 +697,7 @@ inline void check_freeblock(void* bp){
 		
 	/*All free list pointers point in the heap*/
 	if( (in_heap(get_addr(bp)) != 1)   ||
-		((in_heap(get_addr(bp + WSIZE)) != 1) && (get_addr(bp + WSIZE) != NULL))   ){
+		((in_heap(get_addr(bp + WSIZE)) != 1) && (GET(bp + WSIZE) != 1))   ){
 		fprintf(stderr, "checkheap: free list pointer doesn't point in the heap.\n");
 		fprintf(stderr, "mem_heap_hi()=%p, mem_heap_lo()=%p, \n",mem_heap_hi(),mem_heap_lo());
 		fprintf(stderr, "get_addr(bp)=%p, get_addr(bp + WSIZE)=%p, \n",get_addr(bp),get_addr(bp + WSIZE));
@@ -657,12 +709,13 @@ inline void check_freeblock(void* bp){
 		fprintf(stderr, "pred's next=%p, bp's pred = %p\n",next_free_block(prev_free_block(bp)),get_addr(bp));
 		fprintf(stderr, "pred's address=%p, bp's address=%p\n",prev_free_block(bp),bp);
 	}
-	if(get_addr(bp + WSIZE) != NULL && prev_free_block(next_free_block(bp)) != bp)
+	if(GET(bp + WSIZE) != 1 && prev_free_block(next_free_block(bp)) != bp)
 		fprintf(stderr, "checkheap: succ: pred and succ doesn't match.\n");
 }
 
 /*
- * check_freelist - check each free list
+ * check_freelist - check each free list:
+ * count free blocks, block size correctness
  */
 inline int check_freelist(int i){
 	/*Check each free list*/
@@ -702,6 +755,21 @@ inline int check_freelist(int i){
 
 	return block_counter;
 }
+
+/*
+ * check_heapboundaries - check if heap boundaries matches head and end blocks
+ */
+inline void check_heapboundaries(void *heapstart , void *heapend){
+    if(heapstart != mem_heap_lo()){
+		printf("Error: heap start point %p is not equaled to heap low boundary %p\n",
+			heapstart, mem_heap_lo());
+    }
+    if(heapend != mem_heap_hi()){
+		printf("Error: heap end point %p is not equaled to heap high boundary %p\n",
+			heapend, mem_heap_hi());
+    }
+}
+
 /*
  * printblock - print address, size and alloc of a block
  */
