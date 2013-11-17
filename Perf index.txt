@@ -1,3 +1,39 @@
+**************  V5 seglist  MSIZE=4 ************************
+Results for mm malloc:
+  valid  util   ops    secs     Kops  trace
+   yes    82%  100000  0.005049 19807 ./traces/alaska.rep
+ * yes    98%    4805  0.000315 15252 ./traces/amptjp.rep
+ * yes    83%    4162  0.000184 22670 ./traces/bash.rep
+ * yes    55%   57716  0.001606 35946 ./traces/boat.rep
+ * yes    96%    5032  0.000337 14921 ./traces/cccp.rep
+ * yes    75%   11991  0.000497 24131 ./traces/chrome.rep
+ * yes    99%   20000  0.000564 35491 ./traces/coalesce-big.rep
+   yes    93%   14400  0.000317 45439 ./traces/coalescing-bal.rep
+   yes   100%      15  0.000001 14010 ./traces/corners.rep
+ * yes    99%    5683  0.000424 13403 ./traces/cp-decl.rep
+ u yes    59%      --        --    -- ./traces/exhaust.rep
+ * yes    77%    8000  0.000321 24895 ./traces/firefox.rep
+   yes    82%   99804  0.004452 22420 ./traces/firefox-reddit.rep
+   yes    81%     118  0.000006 19932 ./traces/hostname.rep
+ * yes    91%   19405  0.000904 21464 ./traces/login.rep
+ * yes    89%     200  0.000008 23837 ./traces/lrucd.rep
+   yes    90%     372  0.000016 23213 ./traces/ls.rep
+   yes    85%      10  0.000001 17222 ./traces/malloc.rep
+   yes    70%      17  0.000001 26695 ./traces/malloc-free.rep
+ u yes    99%      --        --    -- ./traces/needle.rep
+ * yes    97%     200  0.000011 18006 ./traces/nlydf.rep
+   yes    86%    1494  0.000083 18095 ./traces/perl.rep
+ * yes    89%     200  0.000009 21227 ./traces/qyqyc.rep
+ * yes    89%    4800  0.000596  8060 ./traces/random.rep
+ * yes    87%    4800  0.000627  7650 ./traces/random2.rep
+ * yes    92%     147  0.000008 18166 ./traces/rm.rep
+ * yes    93%     200  0.000009 22347 ./traces/rulsr.rep
+ p yes     --    6495  0.000254 25590 ./traces/seglist.rep
+   yes    97%      12  0.000002  6947 ./traces/short2.rep
+18 17     87%  153836  0.006674 23049
+
+Perf index = 52 (util) & 39 (thru) = 91/100
+
 **************  V4  segregated list ************************
 Results for mm malloc:
   valid  util   ops    secs     Kops  trace

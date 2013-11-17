@@ -114,7 +114,7 @@ int mm_init(void) {
 		return -1;
 	}
 	
-	/*use the first FREE_LIST_NUM blocks as free list roots*/ 
+	/*use the first FREE_LIST_NUM DSIZE as free list roots*/ 
 	free_listp = heap_listp;
 	for(int i=0; i<FREE_LIST_NUM; i++){
 		char *root = get_list_root(i);
@@ -203,24 +203,51 @@ void *realloc(void *oldptr, size_t size) {
 	else
 		asize = DSIZE * ((size + (DSIZE) + (DSIZE-1)) / DSIZE);
 		
-	if (asize <= oldsize) {
+	if (asize < oldsize) {
         place(oldptr, asize);
+		if (!GET_ALLOC(HDRP(NEXT_BLKP(oldptr))))
+			coalesce(NEXT_BLKP(oldptr));
         return oldptr;
     }
+	else if (asize == oldsize){
+		return oldptr;
+	}
 	else if (!GET_ALLOC(HDRP(NEXT_BLKP(oldptr)))){
 		dbg_printf("realloc: the old block has a free block next to it.\n");
-		dbg_printf("oldsize=%d, ",oldsize);
-		size_t nsize = GET_SIZE(HDRP(NEXT_BLKP(oldptr))) + oldsize;
-		dbg_printf("nsize=%d\n",nsize);
-		if (nsize > asize) {
-			delete_free_block(NEXT_BLKP(oldptr));
+		dbg_printf("oldsize=%ld, ",oldsize);
+		size_t next_size = GET_SIZE(HDRP(NEXT_BLKP(oldptr)));
+		size_t nsize = next_size + oldsize;
+		dbg_printf("nsize=%ld\n",nsize);
+		if (nsize >= asize) {
+			if(next_size != DSIZE)
+				delete_free_block(NEXT_BLKP(oldptr));
 			PUT(HDRP(oldptr), PACK(nsize, 1));
 			PUT(FTRP(oldptr), PACK(nsize, 1));
 			place(oldptr, asize);
 			return oldptr;
 		}
 	}
-	
+	/*
+	else if (!GET_ALLOC(FTRP(PREV_BLKP(oldptr)))){
+		dbg_printf("realloc: the old block has a free block before it.\n");
+		dbg_printf("oldsize=%ld, ",oldsize);
+		size_t prev_size = GET_SIZE(FTRP(PREV_BLKP(oldptr)));
+		size_t nsize = prev_size + oldsize;
+		dbg_printf("nsize=%ld\n",nsize);
+		if (nsize >= asize) {
+			newptr = PREV_BLKP(oldptr);
+			if(prev_size != DSIZE)
+				delete_free_block(newptr);
+			memcpy(newptr, oldptr, oldsize - DSIZE);
+			PUT(HDRP(newptr), PACK(nsize, 1));
+			PUT(FTRP(newptr), PACK(nsize, 1));
+			place(newptr, asize);
+			if (!GET_ALLOC(HDRP(NEXT_BLKP(newptr))))
+				coalesce(NEXT_BLKP(newptr));
+			return newptr;
+		}
+	}
+	*/
 	newptr = malloc(size);
 	
 	/* If realloc() fails the original block is left untouched  */
@@ -290,15 +317,24 @@ inline void place(void *bp, size_t asize){
 		dbg_printf("place: %d to %d\n",(int)(HDRP(bp)-heap_listp),(int)(FTRP(bp)-heap_listp+WSIZE));
 		dbg_printblock(bp);
 		
-		//PUT(NEXT_BLKP(bp), prev_free_block(bp));
-		//PUT(NEXT_BLKP(bp) + WSIZE, next_free_block(bp));
-		
-		
 		bp = NEXT_BLKP(bp);
 		PUT(HDRP(bp), PACK(csize - asize, 0));
 		PUT(FTRP(bp), PACK(csize - asize, 0));
 		
 		insert_free_block(bp);
+	}
+	else if ((csize - asize) >= DSIZE){
+		if (!is_realloc)
+			delete_free_block(bp);
+		PUT(HDRP(bp), PACK(asize, 1));
+		PUT(FTRP(bp), PACK(asize, 1));
+		
+		dbg_printf("place: %d to %d\n",(int)(HDRP(bp)-heap_listp),(int)(FTRP(bp)-heap_listp+WSIZE));
+		dbg_printblock(bp);
+		
+		bp = NEXT_BLKP(bp);
+		PUT(HDRP(bp), PACK(DSIZE, 0));
+		PUT(bp, PACK(DSIZE, 0));
 	}
 	else{
 		PUT(HDRP(bp), PACK(csize, 1));
@@ -359,17 +395,21 @@ inline void *coalesce(void *bp){
 	
 	/*prev and next block are allocated*/
 	if(prev_alloc && next_alloc){ 	
+		if(GET_SIZE(HDRP(bp)) == DSIZE)
+			return bp;
 	}
 	/* next block is free */
 	else if(prev_alloc && !next_alloc){ 	
-		delete_free_block(NEXT_BLKP(bp));
+		if(GET_SIZE(HDRP(NEXT_BLKP(bp))) != DSIZE)
+			delete_free_block(NEXT_BLKP(bp));
 		size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
 		PUT(HDRP(bp),PACK(size,0));
 		PUT(FTRP(bp),PACK(size,0));
 	}
 	/* prev block is free */
 	else if(!prev_alloc && next_alloc){ 	
-		delete_free_block(PREV_BLKP(bp));
+		if(GET_SIZE(FTRP(PREV_BLKP(bp))) != DSIZE)
+			delete_free_block(PREV_BLKP(bp));
 		size += GET_SIZE(HDRP(PREV_BLKP(bp)));
 		PUT(FTRP(bp),PACK(size,0));
 		PUT(HDRP(PREV_BLKP(bp)), PACK(size,0));
@@ -377,8 +417,10 @@ inline void *coalesce(void *bp){
 	}
 	/*prev and next are free*/
 	else{ 	
-		delete_free_block(PREV_BLKP(bp));
-		delete_free_block(NEXT_BLKP(bp));
+		if(GET_SIZE(FTRP(PREV_BLKP(bp))) != DSIZE)
+			delete_free_block(PREV_BLKP(bp));
+		if(GET_SIZE(HDRP(NEXT_BLKP(bp))) != DSIZE)
+			delete_free_block(NEXT_BLKP(bp));
 		size += GET_SIZE(HDRP(PREV_BLKP(bp))) + GET_SIZE(FTRP(NEXT_BLKP(bp)));
 		PUT(HDRP(PREV_BLKP(bp)), PACK(size,0));
 		PUT(FTRP(NEXT_BLKP(bp)), PACK(size,0));
@@ -481,11 +523,11 @@ inline int find_free_list_no(size_t size){
     if (block <= 512) 
         return 7;
     if (block <= 1024) 
-        return 8;
-    //if (block <= 2048) 
-    //    return 9;
-    //if (block <= 4096) 
-    //    return 10;
+        return 8;/*
+    if (block <= 2048) 
+        return 9;
+    if (block <= 4096) 
+        return 10;*/
     return 9;
 }
 
@@ -600,7 +642,7 @@ void mm_checkheap(int verbose) {
 	for(int i=0; i<FREE_LIST_NUM; i++){
 		free_block_counter_2 += check_freelist(i);
 	}
-	/*Check counters consistancy*/
+	/*Check counters consistancy*/ 
 	if(free_block_counter_1 != free_block_counter_2){
 		fprintf(stderr, "checkheap: free_block_counter doesn't match, ");
 		fprintf(stderr, "counter_1=%d, counter_2=%d.\n",free_block_counter_1,free_block_counter_2);
@@ -633,19 +675,19 @@ inline void check_block(void* bp){
 inline void check_freeblock(void* bp){
 	/*Check coalescing*/
 	if( GET_ALLOC(HDRP(PREV_BLKP(bp))) == 0 || GET_ALLOC(HDRP(NEXT_BLKP(bp))) == 0 ){
-		fprintf(stderr, "checkheap: two consecutive free blocks in the heap.\n");
+		fprintf(stderr, "checkheap: two consecutive free blocks in the heap. bp=%p\n",bp);
 		if( GET_ALLOC(HDRP(PREV_BLKP(bp))) == 0  )
 			fprintf(stderr, "prev size = %d, bp size = %d\n",GET_SIZE(HDRP(PREV_BLKP(bp))),GET_SIZE(HDRP(bp)));
 		if( GET_ALLOC(HDRP(NEXT_BLKP(bp))) == 0  )
 			fprintf(stderr, "next size = %d, bp size = %d\n",GET_SIZE(HDRP(NEXT_BLKP(bp))),GET_SIZE(HDRP(bp)));
 	}
-	
+		
 	if(GET_SIZE(HDRP(bp)) == DSIZE)
 		return;
 		
 	/*All free list pointers point in the heap*/
 	if( (in_heap(get_addr(bp)) != 1)   ||
-		((in_heap(get_addr(bp + WSIZE)) != 1) && (get_addr(bp + WSIZE) != NULL))   ){
+		((in_heap(get_addr(bp + WSIZE)) != 1) && (GET(bp + WSIZE) != 1))   ){
 		fprintf(stderr, "checkheap: free list pointer doesn't point in the heap.\n");
 		fprintf(stderr, "mem_heap_hi()=%p, mem_heap_lo()=%p, \n",mem_heap_hi(),mem_heap_lo());
 		fprintf(stderr, "get_addr(bp)=%p, get_addr(bp + WSIZE)=%p, \n",get_addr(bp),get_addr(bp + WSIZE));
@@ -657,7 +699,7 @@ inline void check_freeblock(void* bp){
 		fprintf(stderr, "pred's next=%p, bp's pred = %p\n",next_free_block(prev_free_block(bp)),get_addr(bp));
 		fprintf(stderr, "pred's address=%p, bp's address=%p\n",prev_free_block(bp),bp);
 	}
-	if(get_addr(bp + WSIZE) != NULL && prev_free_block(next_free_block(bp)) != bp)
+	if(GET(bp + WSIZE) != 1 && prev_free_block(next_free_block(bp)) != bp)
 		fprintf(stderr, "checkheap: succ: pred and succ doesn't match.\n");
 }
 
@@ -672,14 +714,13 @@ inline int check_freelist(int i){
 		return 0;
 		
 	int last_free_block_counter = 0;
-	/*
 	unsigned int min_size = (1<<(i+4))+1;
 	unsigned long int max_size = 1<<(i+5);
 	if(i == 0)
 		min_size = 2*DSIZE;
 	if(i == (FREE_LIST_NUM-1))
 		max_size = MAX_NUMBER;
-	*/
+	
 	for(bp = get_list_first(i); bp != (void*)1; bp = next_free_block(bp)){
 		/*Count free blocks by traversing free list */
 		block_counter++;
