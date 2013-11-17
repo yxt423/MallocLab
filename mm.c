@@ -691,37 +691,40 @@ inline int check_freelist(int i){
 	/*Check each free list*/
 	char * bp;
 	int block_counter = 0;
-	if(get_list_first(i) == (void*)1)
+	
+	if(get_list_first(i) == FLMARK)
 		return 0;
 		
 	int last_free_block_counter = 0;
-	/*
 	unsigned int min_size = (1<<(i+4))+1;
 	unsigned long int max_size = 1<<(i+5);
-	if(i == 0)
-		min_size = 2*DSIZE;
+	
+	if(i == 0){
+		min_size = 1;
+		max_size = 4*DSIZE;
+	}
 	if(i == (FREE_LIST_NUM-1))
 		max_size = MAX_NUMBER;
-	*/
-	for(bp = get_list_first(i); bp != (void*)1; bp = next_free_block(bp)){
+	
+	for(bp = get_list_first(i); bp != FLMARK; bp = next_free_block(bp)){
 		/*Count free blocks by traversing free list */
 		block_counter++;
 			
-		if(get_addr(bp + WSIZE) == (void*)1)
+		if(get_addr(bp + WSIZE) == FLMARK)
 			last_free_block_counter++;
 			
 		/*All blocks in each list bucket fall within bucket size range*/
-		/*
 		size_t size = GET_SIZE(HDRP(bp));
 		if(size < min_size || size > max_size){
 			fprintf(stderr, "checkheap: free block in wrong list.\n");
-			fprintf(stderr, "size=%d,FREE_LIST_NUM=%d.\n",(int)size,find_free_list_no(size));
+			fprintf(stderr, "size=%d,FREE_LIST_NUM=%d.\n",
+				(int)size,find_free_list_no(size));
 		}
-		*/
 	}
 	
 	if(last_free_block_counter != 1)
-		fprintf(stderr, "checkheap: last_free_block_counter=%d\n",last_free_block_counter);
+		fprintf(stderr, "checkheap: last_free_block_counter=%d\n",
+			last_free_block_counter);
 
 	return block_counter;
 }
@@ -731,11 +734,11 @@ inline int check_freelist(int i){
  */
 inline void check_heapboundaries(void *heapstart , void *heapend){
     if(heapstart != mem_heap_lo()){
-		printf("Error: heap start point %p is not equaled to heap low boundary %p\n",
+		printf("Error: heap start point %p not equaled to low boundary %p\n",
 			heapstart, mem_heap_lo());
     }
     if(heapend != mem_heap_hi()){
-		printf("Error: heap end point %p is not equaled to heap high boundary %p\n",
+		printf("Error: heap end point %p not equaled to high boundary %p\n",
 			heapend, mem_heap_hi());
     }
 }
@@ -744,8 +747,9 @@ inline void check_heapboundaries(void *heapstart , void *heapend){
  * printblock - print address, size and alloc of a block
  */
 inline void printblock(void *bp){
-	printf("bp=%p,h_a = %d, f_a = %d, h_s = %d, f_s = %d. \n",bp,
-		GET_ALLOC(HDRP(bp)),GET_ALLOC(FTRP(bp)),GET_SIZE(HDRP(bp)),GET_SIZE(FTRP(bp)));
+	printf("bp=%p,h_a=%d, f_a=%d, h_s=%d, f_s=%d. \n",bp,GET_ALLOC(HDRP(bp)),
+		GET_ALLOC(FTRP(bp)),GET_SIZE(HDRP(bp)),GET_SIZE(FTRP(bp)));
 	if(GET_ALLOC(HDRP(bp)) == 0)
-		printf("pred = %p, succ = %p\n",prev_free_block(bp),next_free_block(bp));
+		printf("pred = %p, succ = %p\n",prev_free_block(bp),
+			next_free_block(bp));
 }
